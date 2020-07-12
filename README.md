@@ -1,5 +1,5 @@
-# Hello World Example
+# ESP-LCD
 
-Starts a FreeRTOS task to print "Hello World"
+Project to provide a small secondary screen, kind of like a heads-up display, that shows various info such as time, weather, and Spotify playback.
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+Components used are an ST7735 display, an ESP32-DevKitC-v4 board, and a small push button for switching between pages.
