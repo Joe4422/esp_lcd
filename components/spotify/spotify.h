@@ -9,7 +9,7 @@
 /****************************************************************
  * Defines, consts
  ****************************************************************/
-#define MAX_NAME_LENGTH	(32)
+#define MAX_NAME_LENGTH	(64)
 #define MAX_ALBUM_LENGTH (32)
 #define MAX_ARTIST_LENGTH (32)
 #define MAX_ART_URL_LENGTH (128)

@@ -25,6 +25,7 @@
 // Pager includes
 #include "pager/pager.h"
 #include "pager/page_spotify.h"
+#include "pager/page_template.h"
 
 // WEB_CLIENT includes
 #include "web_client/client.h"
@@ -32,11 +33,14 @@
 // Project includes
 #include "config.h"
 #include "wifi_login.h"
+#include "button.h"
 
 /****************************************************************
  * Defines, consts
  ****************************************************************/
-const uint8_t GPIO_INTERRUPT_PIN = 12;
+#define GPIO_BUTTON_PIN		(12)
+
+#define LONG_PRESS_LENGTH	(MS_TO_TICKS(3000))
 
 /****************************************************************
  * Function declarations
@@ -52,6 +56,8 @@ void GPIO_Interrupt_Handler(void * ptr);
  ****************************************************************/
 void app_main()
 {
+	button_event_t buttonEvent;
+
 	// Initialise display
 	ESP_LOGI("Startup", "Initialising display...");
 	if (TFT_Init() == false)
@@ -96,7 +102,6 @@ void app_main()
 		ESP_LOGI("Startup", "WiFi initialised.");
 	}
 
-
 	ESP_LOGI("Startup", "Initialising web client...");
 	if (WebClient_Init() == false)
 	{
@@ -106,23 +111,56 @@ void app_main()
 	ESP_LOGI("Startup", "Web client initialised.");
 
 	ESP_LOGI("Startup", "Initialising pager...");
-	if (WebClient_Init() == false || Pager_AddPage(&PAGE_SPOTIFY) == false)
+	if (Pager_AddPage(&PAGE_SPOTIFY) == false || Pager_AddPage(&PAGE_TEMPLATE) == false)
 	{
 		ESP_LOGE("Startup", "Pager initialisation failed!");
 		while (1) vTaskDelay(portTICK_PERIOD_MS);
 	}
 	ESP_LOGI("Startup", "Pager initialised.");
 
-	ESP_LOGI("Startup", "Initialising GPIO interrupt...");
-	if (GPIO_Init() == false)
-	{
-		ESP_LOGE("Startup", "GPIO interrupt initialisation failed!");
-		while (1) vTaskDelay(portTICK_PERIOD_MS);
-	}
-	ESP_LOGI("Startup", "GPIO interrupt initialised.");
+	ESP_LOGI("Startup", "Initialising buttons...");
+	QueueHandle_t button_events = button_init(PIN_BIT(GPIO_BUTTON_PIN));
+	ESP_LOGI("Startup", "Buttons initialised.");
 
-	ESP_LOGI("Startup", "Starting pager loop...");
-	Pager_StartLoop();
+	ESP_LOGI("Startup", "Starting main loop...");
+
+	while (1)
+	{
+		if (xQueueReceive(button_events, &buttonEvent, 0))
+		{
+			if ((buttonEvent.pin == GPIO_BUTTON_PIN) && (buttonEvent.event == BUTTON_UP))
+			{
+				bool buttonReleased = false;
+				uint32_t ticksHeld = 0;
+
+				while (buttonReleased == false)
+				{
+					ticksHeld++;
+					if (xQueueReceive(button_events, &buttonEvent, 0))
+					{
+						if ((buttonEvent.pin == GPIO_BUTTON_PIN) && (buttonEvent.event == BUTTON_DOWN))
+						{
+							buttonReleased = true;
+						}
+					}
+					vTaskDelay(portTICK_PERIOD_MS);
+				}
+
+				if (ticksHeld > LONG_PRESS_LENGTH)
+				{
+					// Long press
+
+				}
+				else
+				{
+					// Short press
+					Pager_NextPage();
+				}
+			}
+		}
+		Pager_Tick();
+		vTaskDelay(portTICK_PERIOD_MS);
+	}
 }
 
 bool TFT_Init()
@@ -168,20 +206,4 @@ bool TFT_Init()
 	_fg = TFT_WHITE;
 
 	return true;
-}
-
-bool GPIO_Init()
-{
-	gpio_set_direction(GPIO_INTERRUPT_PIN, GPIO_MODE_INPUT);
-	gpio_set_intr_type(GPIO_INTERRUPT_PIN, GPIO_INTR_HIGH_LEVEL);
-	gpio_intr_enable(GPIO_INTERRUPT_PIN);
-	gpio_install_isr_service(0);
-	gpio_isr_handler_add(GPIO_INTERRUPT_PIN, GPIO_Interrupt_Handler, (void*) &GPIO_INTERRUPT_PIN);
-
-	return true;
-}
-
-void GPIO_Interrupt_Handler(void * ptr)
-{
-	Pager_NextPage();
 }

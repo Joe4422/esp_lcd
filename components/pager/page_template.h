@@ -1,5 +1,5 @@
-#ifndef PAGER_PAGE_SPOTIFY_H_
-#define PAGER_PAGE_SPOTIFY_H_
+#ifndef PAGER_PAGE_TEMPLATE_H_
+#define PAGER_PAGE_TEMPLATE_H_
 
 /****************************************************************
  * Includes
@@ -10,6 +10,6 @@
 /****************************************************************
  * Global variables
  ****************************************************************/
-extern page_t PAGE_SPOTIFY;
+extern page_t PAGE_TEMPLATE;
 
-#endif /* PAGER_PAGE_SPOTIFY_H_ */
+#endif /* PAGER_PAGE_TEMPLATE_H_ */

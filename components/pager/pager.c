@@ -16,10 +16,13 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
+// Project includes
+#include "../../main/config.h"
+
 /****************************************************************
  * Defines, consts
  ****************************************************************/
-#define DELAY_INTERVAL_MS				(10)
+#define HEADER_LIFETIME	(MS_TO_TICKS(2000))
 
 /****************************************************************
  * Local variables
@@ -30,16 +33,18 @@ page_t * activePage = NULL;
 
 xTaskHandle taskHandle_UpdateActivePage;
 
-uint8_t updateCounter = 0;
+uint32_t updateCounter = 0;
 
 bool needsNextPage = false;
+
+uint16_t header_lifetime = HEADER_LIFETIME;
 
 /****************************************************************
  * Function declarations
  ****************************************************************/
 void UpdateActivePage();
 
-void DrawHeader();
+void DrawHeader(bool fullSize);
 
 void SwitchNextPage();
 
@@ -51,11 +56,36 @@ bool Pager_Init()
 	return true;
 }
 
-bool Pager_StartLoop()
+void Pager_Tick()
 {
-	while (1)
+	if (startPage != NULL && activePage != NULL && endPage != NULL)
 	{
-		UpdateActivePage();
+		if (needsNextPage == true)
+		{
+			needsNextPage = false;
+			SwitchNextPage();
+		}
+
+		if (updateCounter == activePage->update_period)
+		{
+			ESP_LOGI("Pager", "Updating page %s.", activePage->name);
+			activePage->renderPage(false);
+			DrawHeader(header_lifetime > 0);
+			updateCounter = 0;
+		}
+		else
+		{
+			updateCounter++;
+			if (header_lifetime > 0)
+			{
+				header_lifetime--;
+				if (header_lifetime == 0)
+				{
+					activePage->renderPage(true);
+					DrawHeader(false);
+				}
+			}
+		}
 	}
 }
 
@@ -72,8 +102,9 @@ bool Pager_AddPage(page_t * page)
 
 		startPage->nextPage = page;
 		page->initPage();
-		page->renderPage();
-		DrawHeader();
+		page->renderPage(true);
+		DrawHeader(true);
+		header_lifetime = HEADER_LIFETIME;
 	}
 	else
 	{
@@ -112,44 +143,33 @@ void SwitchNextPage()
 {
 	if (activePage->deInitPage != NULL) activePage->deInitPage();
 	activePage = activePage->nextPage;
+	TFT_fillScreen(TFT_BLACK);
+	TFT_setFont(DEFAULT_FONT, NULL);
+	_fg = TFT_WHITE;
+	_bg = TFT_BLACK;
+	TFT_print("Loading...", CENTER, CENTER);
+	DrawHeader(true);
 	if (activePage->initPage != NULL) activePage->initPage();
-	activePage->renderPage();
-	DrawHeader();
+	activePage->renderPage(true);
+	DrawHeader(true);
 	updateCounter = 0;
+	header_lifetime = HEADER_LIFETIME;
 
 	ESP_LOGI("Pager", "Setting active page to %s.", activePage->name);
 }
 
-void UpdateActivePage()
+void DrawHeader(bool fullSize)
 {
-	if (startPage != NULL && activePage != NULL && endPage != NULL)
+	if (fullSize)
 	{
-		if (needsNextPage == true)
-		{
-			needsNextPage = false;
-			SwitchNextPage();
-		}
-
-		if (updateCounter == activePage->update_period_s)
-		{
-			ESP_LOGI("Pager", "Updating page %s.", activePage->name);
-			activePage->renderPage();
-			DrawHeader();
-			updateCounter = 0;
-		}
-		else
-		{
-			updateCounter++;
-		}
+		TFT_fillRect(0, 140, 128, 20, activePage->header_bg);
+		_bg = activePage->header_bg;
+		TFT_setFont(DEFAULT_FONT, NULL);
+		_fg = activePage->header_fg;
+		TFT_print(activePage->name, CENTER, 144);
 	}
-	vTaskDelay(DELAY_INTERVAL_MS * portTICK_PERIOD_MS);
-}
-
-void DrawHeader()
-{
-	TFT_fillRect(0, 140, 128, 20, activePage->theme);
-	_bg = activePage->theme;
-	TFT_setFont(DEFAULT_FONT, NULL);
-	_fg = TFT_WHITE;
-	TFT_print(activePage->name, CENTER, 144);
+	else
+	{
+		TFT_drawLine(0, 159, 127, 159, activePage->header_bg);
+	}
 }

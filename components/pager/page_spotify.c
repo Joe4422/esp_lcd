@@ -23,6 +23,9 @@
 // TFT includes
 #include "tft/tft.h"
 
+// Project includes
+#include "../../main/config.h"
+
 /****************************************************************
  * Defines, consts
  ****************************************************************/
@@ -41,8 +44,7 @@
  ****************************************************************/
 bool Page_Spotify_InitPage();
 bool Page_Spotify_DeInitPage();
-
-void Page_Spotify_RenderPage();
+void Page_Spotify_RenderPage(bool force);
 
 /****************************************************************
  * Global variables
@@ -54,8 +56,9 @@ page_t PAGE_SPOTIFY =
 	.initPage = Page_Spotify_InitPage,
 	.deInitPage = Page_Spotify_DeInitPage,
 	.renderPage = Page_Spotify_RenderPage,
-	.theme = (color_t){ 30, 215, 96 },
-	.update_period_s = 10
+	.header_fg = (color_t){ 255, 255, 255 },
+	.header_bg = (color_t){ 30, 215, 96 },
+	.update_period = MS_TO_TICKS(5000)
 };
 
 /****************************************************************
@@ -89,7 +92,7 @@ bool Page_Spotify_DeInitPage()
 	return true;
 }
 
-void Page_Spotify_RenderPage()
+void Page_Spotify_RenderPage(bool force)
 {
 	song_t requestSong;
 	char track_info[TRACK_INFO_BUFFER_SIZE];
@@ -103,14 +106,17 @@ void Page_Spotify_RenderPage()
 		return;
 	}
 
-	if (strcmp(requestSong.album, currentSong.album) == 0 &&
-		strcmp(requestSong.art_url, currentSong.art_url) == 0 &&
-		strcmp(requestSong.artist, currentSong.artist) == 0 &&
-		strcmp(requestSong.name, currentSong.name) == 0 &&
-		requestSong.isPlaying == currentSong.isPlaying)
+	if (!force)
 	{
-		ESP_LOGI("Page_Spotify", "Page does not need to update.");
-		return;
+		if (strcmp(requestSong.album, currentSong.album) == 0 &&
+			strcmp(requestSong.art_url, currentSong.art_url) == 0 &&
+			strcmp(requestSong.artist, currentSong.artist) == 0 &&
+			strcmp(requestSong.name, currentSong.name) == 0 &&
+			requestSong.isPlaying == currentSong.isPlaying)
+		{
+			ESP_LOGI("Page_Spotify", "Page does not need to update.");
+			return;
+		}
 	}
 
 	ESP_LOGI("Page_Spotify", "Old art URL: %s", currentSong.art_url);
@@ -128,7 +134,6 @@ void Page_Spotify_RenderPage()
 			ESP_LOGE("Page_Spotify", "Error refreshing album art for album %s!", currentSong.album);
 		}
 	}
-
 
 	ESP_LOGI("Page_Spotify", "Redrawing display...");
 

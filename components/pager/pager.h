@@ -25,9 +25,10 @@ typedef struct page
 	char 			name[PAGE_NAME_SIZE];
 	bool			(* initPage)();
 	bool			(* deInitPage)();
-	void 			(* renderPage)();
-	color_t			theme;
-	uint16_t		update_period_s;
+	void 			(* renderPage)(bool force);
+	color_t			header_fg;
+	color_t			header_bg;
+	uint32_t		update_period;
 } page_t;
 
 /****************************************************************
@@ -35,7 +36,7 @@ typedef struct page
  ****************************************************************/
 bool Pager_Init();
 
-bool Pager_StartLoop();
+void Pager_Tick();
 
 bool Pager_AddPage(page_t * page);
 
