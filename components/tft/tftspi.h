@@ -531,6 +531,7 @@ void disp_spi_transfer_cmd_data(int8_t cmd, uint8_t *data, uint32_t len);
 void drawPixel(int16_t x, int16_t y, color_t color, uint8_t sel);
 void send_data(int x1, int y1, int x2, int y2, uint32_t len, color_t *buf);
 void TFT_pushColorRep(int x1, int y1, int x2, int y2, color_t data, uint32_t len);
+void TFT_pushColorRepBuffer(int x1, int y1, int x2, int y2, color_t * color, uint32_t len);
 int read_data(int x1, int y1, int x2, int y2, int len, uint8_t *buf, uint8_t set_sp);
 color_t readPixel(int16_t x, int16_t y);
 int touch_get_data(uint8_t type);

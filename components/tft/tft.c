@@ -193,6 +193,20 @@ static void _drawFastHLine(int16_t x, int16_t y, int16_t w, color_t color) {
 	TFT_pushColorRep(x, y, x+w-1, y, color, (uint32_t)w);
 }
 
+static void _drawFastHLineBuffer(int16_t x, int16_t y, int16_t w, color_t * color) {
+	// clipping
+	if ((y < dispWin.y1) || (x > dispWin.x2) || (y > dispWin.y2)) return;
+	if (x < dispWin.x1) {
+		w -= (dispWin.x1 - x);
+		x = dispWin.x1;
+	}
+	if (w < 0) w = 0;
+	if ((x + w) > (dispWin.x2+1)) w = dispWin.x2 - x + 1;
+	if (w == 0) w = 1;
+
+	TFT_pushColorRepBuffer(x, y, x+w-1, y, color, (uint32_t)w);
+}
+
 //======================================================================
 void TFT_drawFastVLine(int16_t x, int16_t y, int16_t h, color_t color) {
 	_drawFastVLine(x+dispWin.x1, y+dispWin.y1, h, color);
@@ -201,6 +215,10 @@ void TFT_drawFastVLine(int16_t x, int16_t y, int16_t h, color_t color) {
 //======================================================================
 void TFT_drawFastHLine(int16_t x, int16_t y, int16_t w, color_t color) {
 	_drawFastHLine(x+dispWin.x1, y+dispWin.y1, w, color);
+}
+
+void TFT_drawFastHLineBuffer(int16_t x, int16_t y, int16_t w, color_t * color) {
+	_drawFastHLineBuffer(x+dispWin.x1, y+dispWin.y1, w, color);
 }
 
 // Bresenham's algorithm - thx wikipedia - speed enhanced by Bodmer this uses

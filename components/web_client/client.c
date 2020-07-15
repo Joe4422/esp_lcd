@@ -44,7 +44,7 @@ bool WebClient_Get(char * url, size_t headerCount, header_t * headers, size_t bu
 	if (err == ESP_OK)
 	{
 		content_length = esp_http_client_fetch_headers(client);
-		ESP_LOGI("WebClient", "Read %d bytes of data from %s.", content_length, url);
+		//ESP_LOGI("WebClient", "Read %d bytes of data from %s.", content_length, url);
 		if (content_length < bufferSize)
 		{
 			esp_http_client_read(client, buffer, content_length);

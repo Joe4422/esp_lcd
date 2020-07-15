@@ -42,8 +42,6 @@ uint16_t header_lifetime = HEADER_LIFETIME;
 /****************************************************************
  * Function declarations
  ****************************************************************/
-void UpdateActivePage();
-
 void DrawHeader(bool fullSize);
 
 void SwitchNextPage();
@@ -85,6 +83,19 @@ void Pager_Tick()
 					DrawHeader(false);
 				}
 			}
+		}
+	}
+}
+
+void Pager_Action()
+{
+	if (startPage != NULL && activePage != NULL && endPage != NULL)
+	{
+		if (activePage->action != NULL)
+		{
+			activePage->action();
+			activePage->renderPage(true);
+			DrawHeader(header_lifetime > 0);
 		}
 	}
 }

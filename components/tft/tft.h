@@ -182,6 +182,8 @@ void TFT_drawFastVLine(int16_t x, int16_t y, int16_t h, color_t color);
 //---------------------------------------------------------------------
 void TFT_drawFastHLine(int16_t x, int16_t y, int16_t w, color_t color);
 
+void TFT_drawFastHLineBuffer(int16_t x, int16_t y, int16_t w, color_t * color);
+
 /*
  * Draw line on screen
  * 

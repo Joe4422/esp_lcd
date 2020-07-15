@@ -40,7 +40,7 @@
  ****************************************************************/
 #define GPIO_BUTTON_PIN		(12)
 
-#define LONG_PRESS_LENGTH	(MS_TO_TICKS(3000))
+#define LONG_PRESS_LENGTH	(MS_TO_TICKS(500))
 
 /****************************************************************
  * Function declarations
@@ -149,12 +149,12 @@ void app_main()
 				if (ticksHeld > LONG_PRESS_LENGTH)
 				{
 					// Long press
-
+					Pager_NextPage();
 				}
 				else
 				{
 					// Short press
-					Pager_NextPage();
+					Pager_Action();
 				}
 			}
 		}

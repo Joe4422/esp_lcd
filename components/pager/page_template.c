@@ -19,6 +19,7 @@
 bool Page_Template_InitPage();
 bool Page_Template_DeInitPage();
 void Page_Template_RenderPage(bool force);
+void Page_Template_Action();
 
 /****************************************************************
  * Global variables
@@ -30,6 +31,7 @@ page_t PAGE_TEMPLATE =
 	.initPage =			Page_Template_InitPage,
 	.deInitPage =		Page_Template_DeInitPage,
 	.renderPage =		Page_Template_RenderPage,
+	.action =			Page_Template_Action,
 	.header_fg =		(color_t){ 0, 0, 0 },
 	.header_bg =		(color_t){ 255, 255, 255 },
 	.update_period =	MS_TO_TICKS(60000)
@@ -57,4 +59,9 @@ void Page_Template_RenderPage(bool force)
 	TFT_print("Template Page", CENTER, CENTER);
 	TFT_setFont(DEJAVU24_FONT, NULL);
 	TFT_print("[|:)", CENTER, 100);
+}
+
+void Page_Template_Action()
+{
+	return;
 }

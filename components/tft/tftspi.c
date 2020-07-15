@@ -447,6 +447,18 @@ void IRAM_ATTR TFT_pushColorRep(int x1, int y1, int x2, int y2, color_t color, u
 	disp_deselect();
 }
 
+void IRAM_ATTR TFT_pushColorRepBuffer(int x1, int y1, int x2, int y2, color_t * color, uint32_t len)
+{
+	if (disp_select() != ESP_OK) return;
+
+	// ** Send address window **
+	disp_spi_transfer_addrwin(x1, x2, y1, y2);
+
+	_TFT_pushColorRep(color, len, 0, 1);
+
+	disp_deselect();
+}
+
 // Write 'len' color data to TFT 'window' (x1,y2),(x2,y2) from given buffer
 // ** Device must already be selected **
 //-----------------------------------------------------------------------------------

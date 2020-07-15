@@ -26,6 +26,7 @@ typedef struct page
 	bool			(* initPage)();
 	bool			(* deInitPage)();
 	void 			(* renderPage)(bool force);
+	void			(* action)();
 	color_t			header_fg;
 	color_t			header_bg;
 	uint32_t		update_period;
@@ -37,6 +38,8 @@ typedef struct page
 bool Pager_Init();
 
 void Pager_Tick();
+
+void Pager_Action();
 
 bool Pager_AddPage(page_t * page);
 
