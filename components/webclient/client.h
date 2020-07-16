@@ -1,5 +1,5 @@
-#ifndef WEB_CLIENT_CLIENT_H_
-#define WEB_CLIENT_CLIENT_H_
+#ifndef WEBCLIENT_CLIENT_H_
+#define WEBCLIENT_CLIENT_H_
 
 /****************************************************************
  * Includes
@@ -28,4 +28,4 @@ bool WebClient_Get(char * url, size_t headerCount, header_t * headers, size_t bu
 
 bool WebClient_Post(char * url, size_t fieldsLength, char * fields, size_t headerCount, header_t * headers, size_t bufferSize, char * buffer);
 
-#endif /* WEB_CLIENT_CLIENT_H_ */
+#endif /* WEBCLIENT_CLIENT_H_ */

@@ -8,8 +8,6 @@ project(esp_lcd)
 set(EXTRA_COMPONENT_DIRS "components/tft"
 						 "components/wifi"
 						 "components/spidriver"
-						 "components/web_client"
+						 "components/webclient"
 						 "components/storage"
-						 "components/cjson"
-						 "components/spotify"
-						 "components/pager")
+						 "components/framegrabber")

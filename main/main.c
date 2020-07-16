@@ -22,13 +22,11 @@
 // Storage includes
 #include "storage/storage_manager.h"
 
-// Pager includes
-#include "pager/pager.h"
-#include "pager/page_spotify.h"
-#include "pager/page_template.h"
+// WEBCLIENT includes
+#include "webclient/client.h"
 
-// WEB_CLIENT includes
-#include "web_client/client.h"
+// FRAMEGRABBER includes
+#include "framegrabber/grabber.h"
 
 // Project includes
 #include "config.h"
@@ -110,17 +108,30 @@ void app_main()
 	}
 	ESP_LOGI("Startup", "Web client initialised.");
 
-	ESP_LOGI("Startup", "Initialising pager...");
-	if (Pager_AddPage(&PAGE_SPOTIFY) == false || Pager_AddPage(&PAGE_TEMPLATE) == false)
+	ESP_LOGI("Startup", "Initialising frame grabber...");
+	if (FrameGrabber_Init() == false)
 	{
-		ESP_LOGE("Startup", "Pager initialisation failed!");
+		ESP_LOGE("Startup", "Web client initialisation failed!");
 		while (1) vTaskDelay(portTICK_PERIOD_MS);
 	}
-	ESP_LOGI("Startup", "Pager initialised.");
+	ESP_LOGI("Startup", "Frame grabber initialised.");
+
+//	FrameGrabber_AddPage("page_spotify");
+//	FrameGrabber_AddPage("page_weather");
+//	FrameGrabber_AddPage("page_discord");
+//	FrameGrabber_AddPage("page_fbmessenger");
 
 	ESP_LOGI("Startup", "Initialising buttons...");
 	QueueHandle_t button_events = button_init(PIN_BIT(GPIO_BUTTON_PIN));
 	ESP_LOGI("Startup", "Buttons initialised.");
+
+	ESP_LOGI("Startup", "Starting frame grabber task...");
+	if (FrameGrabber_Run() == false)
+	{
+		ESP_LOGI("Startup", "Frame grabber task start failed.");
+		while (1) vTaskDelay(portTICK_PERIOD_MS);
+	}
+	ESP_LOGI("Startup", "Frame grabber task started.");
 
 	ESP_LOGI("Startup", "Starting main loop...");
 
@@ -149,16 +160,15 @@ void app_main()
 				if (ticksHeld > LONG_PRESS_LENGTH)
 				{
 					// Long press
-					Pager_NextPage();
+					FrameGrabber_NextPage();
 				}
 				else
 				{
 					// Short press
-					Pager_Action();
+					FrameGrabber_PageAction();
 				}
 			}
 		}
-		Pager_Tick();
 		vTaskDelay(portTICK_PERIOD_MS);
 	}
 }
