@@ -36,18 +36,23 @@
 /****************************************************************
  * Defines, consts
  ****************************************************************/
-#define GPIO_BUTTON_PIN		(12)
+#define GPIO_BUTTON_PIN				(12)
 
-#define LONG_PRESS_LENGTH	(MS_TO_TICKS(500))
+#define LONG_PRESS_LENGTH			(400 / portTICK_PERIOD_MS)
+#define TAP_TIMEOUT					(600 / portTICK_PERIOD_MS)
+
+
+/****************************************************************
+ * Local variables
+ ****************************************************************/
+uint32_t lastButtonPressTime = 0;
+uint32_t holdStartTime = 0;
+uint8_t tapCount = 0;
 
 /****************************************************************
  * Function declarations
  ****************************************************************/
 bool TFT_Init();
-
-bool GPIO_Init();
-
-void GPIO_Interrupt_Handler(void * ptr);
 
 /****************************************************************
  * Function definitions
@@ -132,39 +137,51 @@ void app_main()
 
 	while (1)
 	{
+		uint32_t ticks = xTaskGetTickCount();
 		if (xQueueReceive(button_events, &buttonEvent, 0))
 		{
-			if ((buttonEvent.pin == GPIO_BUTTON_PIN) && (buttonEvent.event == BUTTON_UP))
+			if (buttonEvent.pin == GPIO_BUTTON_PIN)
 			{
-				bool buttonReleased = false;
-				uint32_t ticksHeld = 0;
-
-				while (buttonReleased == false)
+				if (buttonEvent.event == BUTTON_DOWN)
 				{
-					ticksHeld++;
-					if (xQueueReceive(button_events, &buttonEvent, 0))
+					holdStartTime = buttonEvent.timestamp;
+				}
+				else if (buttonEvent.event == BUTTON_UP)
+				{
+					if (buttonEvent.timestamp >= (holdStartTime + LONG_PRESS_LENGTH))
 					{
-						if ((buttonEvent.pin == GPIO_BUTTON_PIN) && (buttonEvent.event == BUTTON_DOWN))
-						{
-							buttonReleased = true;
-						}
+						// Long press
+						FrameGrabber_PageAction();
+						ESP_LOGI("Buttons", "Registered long press. Hold started at %d, finished at %d.", holdStartTime, buttonEvent.timestamp);
 					}
-					vTaskDelay(portTICK_PERIOD_MS);
+					else if ((tapCount == 0) || (buttonEvent.timestamp < (lastButtonPressTime + TAP_TIMEOUT)))
+					{
+						// Register tap
+						tapCount++;
+						ESP_LOGI("Buttons", "Registered tap number %d. Last press at %d, this press at %d.", tapCount, lastButtonPressTime, buttonEvent.timestamp);
+						lastButtonPressTime = buttonEvent.timestamp;
+					}
 				}
 
-				if (ticksHeld > LONG_PRESS_LENGTH)
-				{
-					// Long press
-					FrameGrabber_NextPage();
-				}
-				else
-				{
-					// Short press
-					FrameGrabber_PageAction();
-				}
 			}
 		}
-		vTaskDelay(100 / portTICK_PERIOD_MS);
+		if (tapCount > 0 && ticks >= (lastButtonPressTime + TAP_TIMEOUT))
+		{
+			ESP_LOGI("Buttons", "Fulfilling tap count %d. %d >= %d.", tapCount, ticks, lastButtonPressTime + TAP_TIMEOUT);
+			switch (tapCount)
+			{
+				case 1:
+					FrameGrabber_NextPage();
+					break;
+				case 2:
+					FrameGrabber_LastPage();
+					break;
+				default:
+					break;
+			}
+			tapCount = 0;
+		}
+		vTaskDelay(10 / portTICK_PERIOD_MS);
 	}
 }
 

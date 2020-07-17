@@ -6,6 +6,7 @@
 typedef struct {
 	uint8_t pin;
     uint8_t event;
+    uint32_t timestamp;
 } button_event_t;
 
 QueueHandle_t * button_init(unsigned long long pin_select);

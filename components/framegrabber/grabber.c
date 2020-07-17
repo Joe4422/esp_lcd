@@ -32,8 +32,6 @@
 
 #define GRABBER_TASK_STACK			(8192)
 
-#define BASE_URL					"http://192.168.0.69/"
-#define URL_LENGTH					(64)
 #define RESPONSE_BUFFER_SIZE		(32)
 
 #define FRAME_PERIOD_MS				(40)
@@ -50,6 +48,8 @@ bool disconnected = false;
  * Function declarations
  ****************************************************************/
 void FrameGrabber_Task(void * pvParameter);
+
+bool FrameGrabber_SendMessage(char * message);
 
 /****************************************************************
  * Function definitions
@@ -73,27 +73,24 @@ bool FrameGrabber_Run()
 
 bool FrameGrabber_NextPage()
 {
-	char buffer[RESPONSE_BUFFER_SIZE];
+	return FrameGrabber_SendMessage("page_next");
+}
 
-	if (WebClient_Get("page_next", RESPONSE_BUFFER_SIZE, buffer) == false)
-	{
-		return false;
-	}
-	else if (strcmp("Failure", buffer) == 0)
-	{
-		return false;
-	}
-	else
-	{
-		return true;
-	}
+bool FrameGrabber_LastPage()
+{
+	return FrameGrabber_SendMessage("page_last");
 }
 
 bool FrameGrabber_PageAction()
 {
+	return FrameGrabber_SendMessage("page_action");
+}
+
+bool FrameGrabber_SendMessage(char * message)
+{
 	char buffer[RESPONSE_BUFFER_SIZE];
 
-	if (WebClient_Get("page_action", RESPONSE_BUFFER_SIZE, buffer) == false)
+	if (WebClient_Get(message, RESPONSE_BUFFER_SIZE, buffer) == false)
 	{
 		return false;
 	}

@@ -17,6 +17,8 @@ bool FrameGrabber_AddPage(char * page);
 
 bool FrameGrabber_NextPage();
 
+bool FrameGrabber_LastPage();
+
 bool FrameGrabber_PageAction();
 
 #endif /* FRAMEGRABBER_GRABBER_H_ */

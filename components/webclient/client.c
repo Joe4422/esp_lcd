@@ -31,7 +31,6 @@ uint8_t addr_family;
 uint8_t ip_protocol;
 int32_t sock;
 struct sockaddr_in dest_addr;
-struct sockaddr_in local_addr;
 
 /****************************************************************
  * Function definitions
@@ -48,12 +47,6 @@ bool WebClient_Init(char * ip)
 	sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
 	if (sock < 0) return false;
 
-	local_addr.sin_family = AF_INET;
-	local_addr.sin_addr.s_addr = inet_addr("192.168.0.77");
-	local_addr.sin_port = htons(PORT);
-
-	if (bind(sock, (struct sockaddr *)&local_addr, sizeof(struct sockaddr_in)) < 0) return false;
-
 	struct timeval to;
 	to.tv_sec = 1;
 	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
@@ -64,6 +57,7 @@ bool WebClient_Init(char * ip)
 bool WebClient_Get(char * request, size_t bufferSize, char * buffer)
 {
 	//ESP_LOGI("WebClient", "Sending request %s.", request);
+	uint32_t startTime = xTaskGetTickCount();
 	int err = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
 	if (err < 0) return false;
 	//ESP_LOGI("WebClient", "Sent request.");
@@ -98,6 +92,6 @@ bool WebClient_Get(char * request, size_t bufferSize, char * buffer)
 		return false;
 	}
 
-	//ESP_LOGI("WebClient", "Got response.");
+	//ESP_LOGI("WebClient", "Got response of %d bytes in %dms.", totalLen, (xTaskGetTickCount() - startTime) * portTICK_PERIOD_MS);
 	return true;
 }

@@ -62,6 +62,7 @@ static void send_event(debounce_t db, int ev) {
     button_event_t event = {
         .pin = db.pin,
         .event = ev,
+		.timestamp = xTaskGetTickCount()
     };
     xQueueSend(queue, &event, portMAX_DELAY);
 }
@@ -71,27 +72,14 @@ static void button_task(void *pvParameter)
     while (1) {
         for (int idx=0; idx<pin_count; idx++) {
             update_button(&debounce[idx]);
-            /*if (debounce[idx].down_time && (millis() - debounce[idx].down_time > LONG_PRESS_DURATION)) {
-                debounce[idx].down_time = 0;
-                ESP_LOGI(TAG, "%d LONG", debounce[idx].pin);
-                int i=0;
-                while (!button_up(&debounce[idx])) {
-                    if (!i) send_event(debounce[idx], BUTTON_DOWN);
-                    i++;
-                    if (i>=5) i=0;
-                    vTaskDelay(10/portTICK_PERIOD_MS);
-                    update_button(&debounce[idx]);
-                }
+            if (button_down(&debounce[idx])) {
+                debounce[idx].down_time = millis();
                 ESP_LOGI(TAG, "%d UP", debounce[idx].pin);
                 send_event(debounce[idx], BUTTON_UP);
-            } else */if (button_down(&debounce[idx])) {
-                debounce[idx].down_time = millis();
-                ESP_LOGI(TAG, "%d DOWN", debounce[idx].pin);
-                send_event(debounce[idx], BUTTON_DOWN);
             } else if (button_up(&debounce[idx])) {
                 debounce[idx].down_time = 0;
-                ESP_LOGI(TAG, "%d UP", debounce[idx].pin);
-                send_event(debounce[idx], BUTTON_UP);
+                ESP_LOGI(TAG, "%d DOWN", debounce[idx].pin);
+                send_event(debounce[idx], BUTTON_DOWN);
             }
         }
         vTaskDelay(10/portTICK_PERIOD_MS);
