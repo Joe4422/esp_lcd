@@ -101,7 +101,7 @@ void app_main()
 	}
 
 	ESP_LOGI("Startup", "Initialising web client...");
-	if (WebClient_Init() == false)
+	if (WebClient_Init("192.168.0.69") == false)
 	{
 		ESP_LOGE("Startup", "Web client initialisation failed!");
 		while (1) vTaskDelay(portTICK_PERIOD_MS);
@@ -115,11 +115,6 @@ void app_main()
 		while (1) vTaskDelay(portTICK_PERIOD_MS);
 	}
 	ESP_LOGI("Startup", "Frame grabber initialised.");
-
-//	FrameGrabber_AddPage("page_spotify");
-//	FrameGrabber_AddPage("page_weather");
-//	FrameGrabber_AddPage("page_discord");
-//	FrameGrabber_AddPage("page_fbmessenger");
 
 	ESP_LOGI("Startup", "Initialising buttons...");
 	QueueHandle_t button_events = button_init(PIN_BIT(GPIO_BUTTON_PIN));
@@ -169,7 +164,7 @@ void app_main()
 				}
 			}
 		}
-		vTaskDelay(portTICK_PERIOD_MS);
+		vTaskDelay(100 / portTICK_PERIOD_MS);
 	}
 }
 

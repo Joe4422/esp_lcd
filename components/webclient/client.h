@@ -24,8 +24,6 @@ typedef struct kvp header_t;
  ****************************************************************/
 bool WebClient_Init();
 
-bool WebClient_Get(char * url, size_t headerCount, header_t * headers, size_t bufferSize, char * buffer);
-
-bool WebClient_Post(char * url, size_t fieldsLength, char * fields, size_t headerCount, header_t * headers, size_t bufferSize, char * buffer);
+bool WebClient_Get(char * request, size_t bufferSize, char * buffer);
 
 #endif /* WEBCLIENT_CLIENT_H_ */

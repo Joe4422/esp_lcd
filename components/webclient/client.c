@@ -3,109 +3,101 @@
  ****************************************************************/
 #include "client.h"
 
+// cstdlib includes
+#include <string.h>
+
 // ESP-IDF includes
-#include "esp_http_client.h"
+#include "esp_system.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "tcpip_adapter.h"
+
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include <lwip/netdb.h>
+
+/****************************************************************
+ * Defines, consts
+ ****************************************************************/
+#define PORT			(4567)
+#define UDP_PACKET_SIZE	(1450)
+
+/****************************************************************
+ * Local variables
+ ****************************************************************/
+char addr_str[128];
+uint8_t addr_family;
+uint8_t ip_protocol;
+int32_t sock;
+struct sockaddr_in dest_addr;
+struct sockaddr_in local_addr;
 
 /****************************************************************
  * Function definitions
  ****************************************************************/
-bool WebClient_Init()
+bool WebClient_Init(char * ip)
 {
+	dest_addr.sin_addr.s_addr = inet_addr(ip);
+	dest_addr.sin_family = AF_INET;
+	dest_addr.sin_port = htons(PORT);
+	addr_family = AF_INET;
+	ip_protocol = IPPROTO_IP;
+	inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
+
+	sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+	if (sock < 0) return false;
+
+	local_addr.sin_family = AF_INET;
+	local_addr.sin_addr.s_addr = inet_addr("192.168.0.77");
+	local_addr.sin_port = htons(PORT);
+
+	if (bind(sock, (struct sockaddr *)&local_addr, sizeof(struct sockaddr_in)) < 0) return false;
+
+	struct timeval to;
+	to.tv_sec = 1;
+	setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &to, sizeof(to));
+
 	return true;
 }
 
-bool WebClient_Get(char * url, size_t headerCount, header_t * headers, size_t bufferSize, char * buffer)
+bool WebClient_Get(char * request, size_t bufferSize, char * buffer)
 {
-	esp_err_t err;
-	bool success = true;
-	size_t i;
-	size_t content_length;
+	//ESP_LOGI("WebClient", "Sending request %s.", request);
+	int err = sendto(sock, request, strlen(request), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+	if (err < 0) return false;
+	//ESP_LOGI("WebClient", "Sent request.");
 
-	// Initialise client
-	esp_http_client_config_t config =
-	{
-		.url = url,
-		.method = HTTP_METHOD_GET
-	};
-	esp_http_client_handle_t client = esp_http_client_init(&config);
+	//ESP_LOGI("WebClient", "Expecting %d bytes of data. Waiting for response...", bufferSize);
 
-	// Copy headers into client
-	for (i = 0; i < headerCount; i++)
+	int len;
+	int totalLen = 0;
+	if (bufferSize <= UDP_PACKET_SIZE)
 	{
-		esp_http_client_set_header(client, headers[i].key, headers[i].value);
+		totalLen = lwip_read(sock, buffer, bufferSize);
 	}
-
-	// Open connection
-	err = esp_http_client_open(client, 0);
-
-	// Read data out into buffer if successful
-	if (err == ESP_OK)
+	else
 	{
-		content_length = esp_http_client_fetch_headers(client);
-		//ESP_LOGI("WebClient", "Read %d bytes of data from %s.", content_length, url);
-		if (content_length < bufferSize)
+		int i = 0;
+		for (i = 0; i < (bufferSize / UDP_PACKET_SIZE) + 1; i++)
 		{
-			esp_http_client_read(client, buffer, content_length);
-			buffer[content_length] = '\0';
+			len = lwip_recv(sock, buffer, bufferSize, 0);
+			if (len < 0)
+			{
+				err = len;
+				break;
+			}
+			buffer += len;
+			totalLen += len;
 		}
-		else success = false;
-	}
-	else success = false;
-
-
-	if (esp_http_client_get_status_code(client) != 200) success = false;
-
-	esp_http_client_close(client);
-	esp_http_client_cleanup(client);
-	return success;
-}
-
-bool WebClient_Post(char * url, size_t fieldsLength, char * fields, size_t headerCount, header_t * headers, size_t bufferSize, char * buffer)
-{
-	esp_err_t err;
-	bool success = true;
-	size_t i;
-	size_t content_length;
-
-	// Initialise client
-	esp_http_client_config_t config =
-	{
-		.url = url,
-		.method = HTTP_METHOD_POST
-	};
-	esp_http_client_handle_t client = esp_http_client_init(&config);
-
-	err = esp_http_client_set_post_field(client, "", 0);
-
-	// Copy headers into client
-	for (i = 0; i < headerCount; i++)
-	{
-		esp_http_client_set_header(client, headers[i].key, headers[i].value);
 	}
 
-	// Open connection
-	err = esp_http_client_open(client, 0);
-
-	// Read data out into buffer if successful
-	if (err == ESP_OK)
+	if (err < 0)
 	{
-		content_length = esp_http_client_fetch_headers(client);
-		if (content_length < bufferSize)
-		{
-			esp_http_client_read(client, buffer, content_length);
-			buffer[content_length] = '\0';
-		}
-		else success = false;
+		ESP_LOGE("WebClient", "LWIP Read ERROR!");
+		return false;
 	}
-	else success = false;
 
-
-	if (esp_http_client_get_status_code(client) != 200) success = false;
-
-	esp_http_client_close(client);
-	esp_http_client_cleanup(client);
-	return success;
-
+	//ESP_LOGI("WebClient", "Got response.");
+	return true;
 }
