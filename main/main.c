@@ -41,13 +41,13 @@
 #define LONG_PRESS_LENGTH			(400 / portTICK_PERIOD_MS)
 #define TAP_TIMEOUT					(600 / portTICK_PERIOD_MS)
 
-
 /****************************************************************
  * Local variables
  ****************************************************************/
 uint32_t lastButtonPressTime = 0;
 uint32_t holdStartTime = 0;
 uint8_t tapCount = 0;
+bool firstButton = true;
 
 /****************************************************************
  * Function declarations
@@ -142,6 +142,12 @@ void app_main()
 		{
 			if (buttonEvent.pin == GPIO_BUTTON_PIN)
 			{
+				if (firstButton == true)
+				{
+					firstButton = false;
+					continue;
+				}
+
 				if (buttonEvent.event == BUTTON_DOWN)
 				{
 					holdStartTime = buttonEvent.timestamp;
@@ -151,7 +157,7 @@ void app_main()
 					if (buttonEvent.timestamp >= (holdStartTime + LONG_PRESS_LENGTH))
 					{
 						// Long press
-						FrameGrabber_PageAction();
+						FrameGrabber_WidgetAction();
 						ESP_LOGI("Buttons", "Registered long press. Hold started at %d, finished at %d.", holdStartTime, buttonEvent.timestamp);
 					}
 					else if ((tapCount == 0) || (buttonEvent.timestamp < (lastButtonPressTime + TAP_TIMEOUT)))
@@ -171,10 +177,10 @@ void app_main()
 			switch (tapCount)
 			{
 				case 1:
-					FrameGrabber_NextPage();
+					FrameGrabber_NextWidget();
 					break;
 				case 2:
-					FrameGrabber_LastPage();
+					FrameGrabber_LastWidget();
 					break;
 				default:
 					break;

@@ -35,14 +35,15 @@
 #define RESPONSE_BUFFER_SIZE		(32)
 
 #define FRAME_PERIOD_MS				(40)
+#define MAX_FAILS					(5)
 
 /****************************************************************
  * Local variables
  ****************************************************************/
 char regionData[FRAME_BUFFER_SIZE];
-uint8_t activePageIndex = 0;
 bool frameGrabberRunning = false;
 bool disconnected = false;
+uint8_t fails = 0;
 
 /****************************************************************
  * Function declarations
@@ -71,19 +72,19 @@ bool FrameGrabber_Run()
 	return true;
 }
 
-bool FrameGrabber_NextPage()
+bool FrameGrabber_NextWidget()
 {
-	return FrameGrabber_SendMessage("page_next");
+	return FrameGrabber_SendMessage("widget_next");
 }
 
-bool FrameGrabber_LastPage()
+bool FrameGrabber_LastWidget()
 {
-	return FrameGrabber_SendMessage("page_last");
+	return FrameGrabber_SendMessage("widget_last");
 }
 
-bool FrameGrabber_PageAction()
+bool FrameGrabber_WidgetAction()
 {
-	return FrameGrabber_SendMessage("page_action");
+	return FrameGrabber_SendMessage("widget_action");
 }
 
 bool FrameGrabber_SendMessage(char * message)
@@ -111,30 +112,22 @@ void FrameGrabber_Task(void * pvParameter)
 		uint8_t i;
 		color_t * colorData = &regionData;
 
-		//ESP_LOGI("Grabber", "Grabbing data.");
-		if (WebClient_Get("page_get_frame", FRAME_BUFFER_SIZE, regionData) == false)
+		if (WebClient_Get("widget_get_frame", FRAME_BUFFER_SIZE, regionData) == false)
 		{
-			// Set all black if request fails
-			memset(regionData, 0, FRAME_BUFFER_SIZE);
-			disconnected = true;
+			if (++fails >= MAX_FAILS)
+			{
+				gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_OFF);
+			}
 		}
 		else
 		{
-			disconnected = false;
+			fails = 0;
+			gpio_set_level(PIN_NUM_BCKL, PIN_BCKL_ON);
+			for (i = 0; i < FRAME_HEIGHT; i++)
+			{
+				TFT_drawFastHLineBuffer(0, i, FRAME_WIDTH, colorData + (FRAME_WIDTH * i));
+			}
 		}
-		//ESP_LOGI("Grabber", "Grabbed data. Blitting page.");
-
-		for (i = 0; i < FRAME_HEIGHT; i++)
-		{
-			TFT_drawFastHLineBuffer(0, i, FRAME_WIDTH, colorData + (FRAME_WIDTH * i));
-		}
-		if (disconnected)
-		{
-			_fg = TFT_WHITE;
-			_bg = TFT_BLACK;
-			TFT_print("Disconnected", CENTER, CENTER);
-		}
-		//ESP_LOGI("Grabber", "Blitted page.");
 
 		vTaskDelay(FRAME_PERIOD_MS / portTICK_PERIOD_MS);
 	}

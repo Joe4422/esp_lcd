@@ -72,9 +72,9 @@
 // ** If you want to use them, set them to some valid GPIO number
 #define PIN_NUM_RST  0  	// GPIO used for RESET control
 
-#define PIN_NUM_BCKL 0  	// GPIO used for backlight control
-#define PIN_BCKL_ON  0  	// GPIO value for backlight ON
-#define PIN_BCKL_OFF 1  	// GPIO value for backlight OFF
+#define PIN_NUM_BCKL 13  	// GPIO used for backlight control
+#define PIN_BCKL_ON  1  	// GPIO value for backlight ON
+#define PIN_BCKL_OFF 0  	// GPIO value for backlight OFF
 // --------------------------------------------------------------
 
 // #######################################################

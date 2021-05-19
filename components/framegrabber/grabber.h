@@ -13,12 +13,10 @@ bool FrameGrabber_Init();
 
 bool FrameGrabber_Run();
 
-bool FrameGrabber_AddPage(char * page);
+bool FrameGrabber_NextWidget();
 
-bool FrameGrabber_NextPage();
+bool FrameGrabber_LastWidget();
 
-bool FrameGrabber_LastPage();
-
-bool FrameGrabber_PageAction();
+bool FrameGrabber_WidgetAction();
 
 #endif /* FRAMEGRABBER_GRABBER_H_ */
